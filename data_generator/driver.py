@@ -46,8 +46,10 @@ def main(argv):
   
   #-- Loop numofcopy and create each of the copies of dataset
   for i in range(int(numofcopy)-1):
+    print("Day %s is being created ..." % str((i+1)*7) )
     
     df_person = add_new_patient(spark, df_person, df_playbook, i+1)
+        
     
     #-- Create data - add/change/delete
     #- Path - /projects/cch/patient-merge/mimic_omop_tables/experiment/
@@ -56,22 +58,9 @@ def main(argv):
     visit_path = path + "/" + "visit_occurrence"
     df_person.write.parquet(person_path)
 
-
-  # Create Day14 data - add/change/delete
-  # Path - /projects/cch/patient-merge/mimic_omop_tables/experiment/Day14
-
-
-
-  # Create Day21 data - add/change/delete
-  # Path - /projects/cch/patient-merge/mimic_omop_tables/experiment/Day21
-
-
-
-  # Create Day28 data - add/change/delete
-  # Path - /projects/cch/patient-merge/mimic_omop_tables/experiment/Day28
-
-
-
+  
+  
+  print("Finish successfully!")
 
   #delete_path(spark,"/projects/cch/patient-merge/mimic_omop_tables/experiment/Day07")
 
