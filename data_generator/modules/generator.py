@@ -22,6 +22,12 @@ def delete_path(spark, path):
 
 def add_new_patient(spark, df_person, df_playbook, copy_num):
     
+    df_new_person = df_playbook.filter((df_playbook.copy_num == copy_num) & (df_playbook.category == 'AD'))
+    df_new_person = df_new_person.select(df_new_person.columns[:18])
+    #df_new_person.show(truncate=False)
+      
+    df_person = df_person.union(df_new_person)
+    
     return df_person
   
 

@@ -39,8 +39,8 @@ def main(argv):
   #df_visit = spark.read.parquet("/projects/cch/patient-merge/mimic_omop_tables/experiment/Day0/visit_occurrence")
   #print(df_person.head(5))
 
-  #-- Load the playbook csv file to create mimic data
-  df_playbook = pd.read_csv("src_sample_person_200.csv")
+  #-- Load the playbook csv file to create mimic data (This file needs to be copied to hdfs prior)
+  df_playbook = spark.read.csv("/projects/cch/patient-merge/mimic_omop_tables/experiment/src_sample_person_200.csv", header=True)
   #print(df_playbook.head(5))
 
   
@@ -48,7 +48,7 @@ def main(argv):
   for i in range(int(numofcopy)-1):
     print("Day %s is being created ..." % str((i+1)*7) )
     
-    df_person = add_new_patient(spark, df_person, df_playbook, i+1)
+    df_new_person = add_new_patient(spark, df_person, df_playbook, i+1)
         
     
     #-- Create data - add/change/delete
@@ -56,7 +56,7 @@ def main(argv):
     path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/Day" + str((i+1)*7)
     person_path = path + "/" + "person"
     visit_path = path + "/" + "visit_occurrence"
-    df_person.write.parquet(person_path)
+    #df_new_person.write.parquet(person_path)
 
   
   
