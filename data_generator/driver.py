@@ -52,11 +52,15 @@ def main(argv):
   for i in range(int(numofcopy)-1):
     print("Day %s is being created ..." % str((i+1)*7) )
     
-    #-- add new patient
+    #-- add new patient | New patient case
     df_new_person = add_new_patient(spark, df_person, df_playbook, i+1)
     
-    #-- change id for couple patients
+    #-- change id for couple patients | ID change case
     df_new_person = id_change(spark, df_new_person, df_playbook, i+1)
+    
+    #-- swap id for couple patients | ID reuse case
+    df_new_person = id_reuse(spark, df_new_person, df_playbook, i+1)
+    
     
     
     #-- copy df_new_person to df_person for the next loop
