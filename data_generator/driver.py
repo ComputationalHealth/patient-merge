@@ -5,7 +5,7 @@ from modules.generator import id_change
 from modules.generator import id_reuse
 from modules.generator import delete_merge_patient
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, countDistinct
+from pyspark.sql.functions import *
 import pandas as pd
 import getopt,sys
 
@@ -52,8 +52,15 @@ def main(argv):
   for i in range(int(numofcopy)-1):
     print("Day %s is being created ..." % str((i+1)*7) )
     
+    #-- add new patient
     df_new_person = add_new_patient(spark, df_person, df_playbook, i+1)
-        
+    
+    #-- change id for couple patients
+    df_new_person = id_change(spark, df_new_person, df_playbook, i+1)
+    
+    
+    #-- copy df_new_person to df_person for the next loop
+    df_person = df_new_person
     
     #-- Create data - add/change/delete
     #- Path - /projects/cch/patient-merge/mimic_omop_tables/experiment/
