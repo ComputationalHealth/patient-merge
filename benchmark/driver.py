@@ -41,7 +41,7 @@ for i in range(len(lst_of_path)-1):
     report_new_add_patient(spark, df_person_0, df_person_1)
     
     print("ID Change Patients: copy " + str(i+1) + " -> copy " + str(i) )
-    report_id_change_patient(spark, df_person_0, df_person_1)
+    report_id_change_patient(spark, df_person_0, df_person_1, 1)
     
     print("ID Reuse Patients: copy " + str(i+1) + " -> copy " + str(i) )
     report_id_reuse_patient(spark, df_person_0, df_person_1)
