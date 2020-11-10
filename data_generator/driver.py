@@ -3,6 +3,7 @@ from modules.generator import create_path
 from modules.generator import add_new_patient
 from modules.generator import id_change
 from modules.generator import id_reuse
+from modules.generator import pure_delete_patient
 from modules.generator import delete_merge_patient
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
@@ -61,10 +62,15 @@ def main(argv):
     #-- swap id for couple patients | ID reuse case
     df_new_person = id_reuse(spark, df_new_person, df_playbook, i+1)
     
+    #-- purely delete couple patients and their associated visits
+    df_new_person, df_new_visit = pure_delete_patient(spark, df_new_person, df_visit, df_playbook, i+1)
     
+    #-- merge patients with their visits
+    df_new_person, df_new_visit = delete_merge_patient(spark, df_new_person, df_new_visit, df_playbook, i+1)
     
-    #-- copy df_new_person to df_person for the next loop
+    #-- copy df_new_person to df_person for the next loop, df_visit as well
     df_person = df_new_person
+    df_visit = df_new_visit
     
     #-- Create data - add/change/delete
     #- Path - /projects/cch/patient-merge/mimic_omop_tables/experiment/
@@ -72,7 +78,7 @@ def main(argv):
     person_path = path + "/" + "person"
     visit_path = path + "/" + "visit_occurrence"
     df_new_person.write.parquet(person_path)
-
+    df_new_visit.write.parquet(visit_path)
   
   
   print("Finish successfully!")
