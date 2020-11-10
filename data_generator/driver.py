@@ -57,13 +57,13 @@ def main(argv):
     df_new_person = add_new_patient(spark, df_person, df_playbook, i+1)
     
     #-- change id for couple patients | ID change case
-    df_new_person = id_change(spark, df_new_person, df_playbook, i+1)
+    df_new_person, df_new_visit = id_change(spark, df_new_person, df_visit, df_playbook, i+1)
     
     #-- swap id for couple patients | ID reuse case
     df_new_person = id_reuse(spark, df_new_person, df_playbook, i+1)
     
     #-- purely delete couple patients and their associated visits
-    df_new_person, df_new_visit = pure_delete_patient(spark, df_new_person, df_visit, df_playbook, i+1)
+    df_new_person, df_new_visit = pure_delete_patient(spark, df_new_person, df_new_visit, df_playbook, i+1)
     
     #-- merge patients with their visits
     df_new_person, df_new_visit = delete_merge_patient(spark, df_new_person, df_new_visit, df_playbook, i+1)

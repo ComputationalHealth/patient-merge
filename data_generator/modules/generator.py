@@ -33,7 +33,7 @@ def add_new_patient(spark, df_person, df_playbook, copy_num):
     return df_person
   
 
-def id_change(spark, df_person, df_playbook, copy_num):
+def id_change(spark, df_person, df_visit, df_playbook, copy_num):
     
     df_id_change = df_playbook.filter((df_playbook.copy_num == copy_num) & (df_playbook.category == 'IC'))
     df_new_data = df_id_change.withColumn('person_id',df_id_change.target_person_id)
@@ -43,7 +43,18 @@ def id_change(spark, df_person, df_playbook, copy_num):
     df_person = df_person.join(df_id_change, on=['person_id'], how='left_anti')
     df_person = df_person.union(df_new_data)
     
-    return df_person
+    #update visit with new IDs
+    df_id_mapping = df_id_change.select(col('person_id'), col('target_person_id'))
+    df_id_mapping = df_id_mapping.withColumnRenamed('person_id','pat_id')
+    
+    df_visit_to_update = df_visit.join(df_id_mapping, col('person_id') == col('pat_id'), 'inner')
+    df_visit_to_update = df_visit_to_update.withColumn('person_id',df_visit_to_update.target_person_id)
+    
+    df_visit_new = df_visit_to_update.select(df_visit_to_update.columns[:19])
+    df_visit = df_visit.join(df_id_mapping, col('person_id') == col('pat_id'), 'left_anti')
+    df_visit = df_visit.union(df_visit_new)
+    
+    return df_person, df_visit
   
 
 def id_reuse(spark, df_person, df_playbook, copy_num):
