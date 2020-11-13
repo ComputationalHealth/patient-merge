@@ -1,6 +1,6 @@
 from pyspark.sql.functions import *
 
-def report_new_add_patient(spark, df_person_0, df_person_1):
+def report_new_add_patient(spark, df_person_0, df_person_1, copy_num):
     
     df_person_0 = df_person_0.alias("df_person_0")
     df_person_1 = df_person_1.alias("df_person_1")
@@ -20,12 +20,16 @@ def report_new_add_patient(spark, df_person_0, df_person_1):
     
     df_return = df_person_1.select('person_id').subtract(df_inner.select('df_person_1.person_id'))
     
-    df_return.distinct().show(truncate=False)
+    df_return = df_return.distinct()
+    df_return.show(truncate=False)
+    
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/AD_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_return.write.csv(path, header=True)
     
     return None
 
   
-def report_id_change_patient(spark, df_person_0, df_person_1, print_on_scr):
+def report_id_change_patient(spark, df_person_0, df_person_1, copy_num, print_on_scr):
   
     df_person_0 = df_person_0.alias("df_person_0")
     df_person_1 = df_person_1.alias("df_person_1")
@@ -84,11 +88,13 @@ def report_id_change_patient(spark, df_person_0, df_person_1, print_on_scr):
     
     if (print_on_scr):
       df_id_change_map.show(truncate=False)
+      path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/IC_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+      df_id_change_map.write.csv(path, header=True)
     
     return df_id_change_map
 
   
-def report_id_reuse_patient(spark, df_person_0, df_person_1):
+def report_id_reuse_patient(spark, df_person_0, df_person_1, copy_num):
   
     df_person_0 = df_person_0.alias("df_person_0")
     df_person_1 = df_person_1.alias("df_person_1")
@@ -136,12 +142,17 @@ def report_id_reuse_patient(spark, df_person_0, df_person_1):
     
     #-- get ID reuse patient
     df_id_reuse = df_inner_with_diff_id.select(col('df_person_1.person_id')).subtract(df_id_change)
-    df_id_reuse.distinct().show(truncate=False)
+    
+    df_id_reuse = df_id_reuse.distinct()
+    df_id_reuse.show(truncate=False)
+    
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/IR_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_id_reuse.write.csv(path, header=True)
     
     return None
   
   
-def report_delete_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1):
+def report_delete_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1, copy_num):
     
     df_person_0 = df_person_0.alias("df_person_0")
     df_person_1 = df_person_1.alias("df_person_1")
@@ -176,10 +187,13 @@ def report_delete_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_
     
     df_person_deleted.show()
     
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/DL_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_person_deleted.write.csv(path, header=True)
+    
     return None
 
   
-def report_merge_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1):
+def report_merge_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1, copy_num):
     
     
     df_person_0 = df_person_0.alias("df_person_0")
@@ -211,7 +225,7 @@ def report_merge_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1
     df_person_m_c = df_person_m_c.select(col('pat_id'), col('person_id'))
     
     #-- get id changed person id
-    df_person_c = report_id_change_patient(spark, df_person_0, df_person_1,0)
+    df_person_c = report_id_change_patient(spark, df_person_0, df_person_1,copy_num, 0)
     
     df_person_m = df_person_m_c.subtract(df_person_c)
     
@@ -222,5 +236,8 @@ def report_merge_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1
     df_person_m = df_person_m.distinct()
     
     df_person_m.show()
+    
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/DM_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_person_m.write.csv(path, header=True)
     
     return None
