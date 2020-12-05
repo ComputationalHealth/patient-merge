@@ -26,10 +26,10 @@ def report_new_add_patient(spark, df_person_0, df_person_1, copy_num):
     df_new_person = df_new_diff_id.join(df_old_diff_id,
                     (
                       (col('df_old_id.gender_concept_id') == col('df_new_id.gender_concept_id')) &
-                      #(col('df_old_id.year_of_birth') == col('df_new_id.year_of_birth')) &
-                      #(col('df_old_id.month_of_birth') == col('df_new_id.month_of_birth')) &
-                      #(col('df_old_id.day_of_birth') == col('df_new_id.day_of_birth')) &
-                      (col('df_old_id.date_of_birth') == col('df_new_id.date_of_birth')) &
+                      (col('df_old_id.year_of_birth') == col('df_new_id.year_of_birth')) &
+                      (col('df_old_id.month_of_birth') == col('df_new_id.month_of_birth')) &
+                      (col('df_old_id.day_of_birth') == col('df_new_id.day_of_birth')) &
+                      #(col('df_old_id.date_of_birth') == col('df_new_id.date_of_birth')) &
                       (col('df_old_id.race_concept_id') == col('df_new_id.race_concept_id')) &
                       (col('df_old_id.ethnicity_concept_id') == col('df_new_id.ethnicity_concept_id'))
                     ),
@@ -38,8 +38,8 @@ def report_new_add_patient(spark, df_person_0, df_person_1, copy_num):
     
     df_return = df_new_person.select('person_id').distinct()
         
-    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/AD_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
-    df_return.write.csv(path, header=True)
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output_mimic/AD_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_return.coalesce(1).write.csv(path, header=True)
     
     df_return.show(truncate=False)
     
@@ -74,10 +74,10 @@ def report_id_change_patient(spark, df_person_0, df_person_1, copy_num, print_on
     df_id_change_with_same_demo = df_new_diff_id.join(df_old_diff_id,
                     (
                       (col('df_old_id.gender_concept_id') == col('df_new_id.gender_concept_id')) &
-                      #(col('df_old_id.year_of_birth') == col('df_new_id.year_of_birth')) &
-                      #(col('df_old_id.month_of_birth') == col('df_new_id.month_of_birth')) &
-                      #(col('df_old_id.day_of_birth') == col('df_new_id.day_of_birth')) &
-                      (col('df_old_id.date_of_birth') == col('df_new_id.date_of_birth')) &
+                      (col('df_old_id.year_of_birth') == col('df_new_id.year_of_birth')) &
+                      (col('df_old_id.month_of_birth') == col('df_new_id.month_of_birth')) &
+                      (col('df_old_id.day_of_birth') == col('df_new_id.day_of_birth')) &
+                      #(col('df_old_id.date_of_birth') == col('df_new_id.date_of_birth')) &
                       (col('df_old_id.race_concept_id') == col('df_new_id.race_concept_id')) &
                       (col('df_old_id.ethnicity_concept_id') == col('df_new_id.ethnicity_concept_id'))
                     ),
@@ -86,11 +86,11 @@ def report_id_change_patient(spark, df_person_0, df_person_1, copy_num, print_on
     
     df_id_change_map = df_id_change_with_same_demo.select(col('df_old_id.person_id'), col('df_new_id.new_person_id'))
     
-    
+      
     if (print_on_scr):
       
-      path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/IC_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
-      df_id_change_map.write.csv(path, header=True)
+      path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output_mimic/IC_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+      df_id_change_map.coalesce(1).write.csv(path, header=True)
     
       df_id_change_map.show(truncate=False)
       
@@ -109,7 +109,9 @@ def report_id_reuse_patient(spark, df_person_0, df_person_1, copy_num):
                 (col('df_person_0.person_id') == col('df_person_1.new_person_id')) &
                 (
                   (col('df_person_0.gender_concept_id') != col('df_person_1.gender_concept_id')) |
-                  (col('df_person_0.date_of_birth') != col('df_person_1.date_of_birth')) |
+                  (col('df_person_0.year_of_birth') != col('df_person_1.year_of_birth')) |
+                  (col('df_person_0.month_of_birth') != col('df_person_1.month_of_birth')) |
+                  (col('df_person_0.day_of_birth') != col('df_person_1.day_of_birth')) |
                   (col('df_person_0.race_concept_id') != col('df_person_1.race_concept_id')) |
                   (col('df_person_0.ethnicity_concept_id') != col('df_person_1.ethnicity_concept_id'))
                 )
@@ -120,8 +122,8 @@ def report_id_reuse_patient(spark, df_person_0, df_person_1, copy_num):
     df_id_reuse_map = df_id_reuse.select(col('df_person_0.person_id'), col('df_person_1.new_person_id'))
     
     
-    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/IR_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
-    df_id_reuse_map.write.csv(path, header=True)
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output_mimic/IR_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_id_reuse_map.coalesce(1).write.csv(path, header=True)
     
     df_id_reuse_map.show(truncate=False)
     
@@ -161,8 +163,8 @@ def report_delete_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_
     
     df_person_deleted = df_person_deleted.distinct()
     
-    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/DL_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
-    df_person_deleted.write.csv(path, header=True)
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output_mimic/DL_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_person_deleted.coalesce(1).write.csv(path, header=True)
     
     df_person_deleted.show()
     
@@ -211,8 +213,8 @@ def report_merge_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1
     
     df_person_m = df_person_m.distinct()
     
-    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/DM_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
-    df_person_m.write.csv(path, header=True)
+    path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output_mimic/DM_cp" + str(copy_num+1) + "_to_cp" + str(copy_num) + ".csv" 
+    df_person_m.coalesce(1).write.csv(path, header=True)
     
     df_person_m.show()
     

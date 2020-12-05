@@ -1,12 +1,7 @@
-from modules.benchmark import report_new_add_patient
-from modules.benchmark import report_id_change_patient
-from modules.benchmark import report_id_reuse_patient
-from modules.benchmark import report_delete_patient
-from modules.benchmark import report_merge_patient
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
+from pyspark.sql.types import StructType,StructField, StringType
 import pandas as pd
-import datetime
 
 lst_of_path = [
   '/projects/cch/patient-merge/versioned_omop/2020-07-30/',
@@ -46,50 +41,66 @@ lst_of_path = [
 spark = SparkSession\
     .builder\
     .getOrCreate()
-      
-for i in range(len(lst_of_path)-1):
-  #-- In each loop, compare two snapshots, i.e. Day7 compares to Day0, Day14 compares to Day7
-  if i+1 < len(lst_of_path):
-    path_0 = lst_of_path[i]   #path_0 is baseline
-    path_1 = lst_of_path[i+1]
-    
-    person_path_0 = path_0 + "person"
-    person_path_1 = path_1 + "person"
-    
-    df_person_0 = spark.read.parquet(person_path_0)
-    df_person_1 = spark.read.parquet(person_path_1)
-    
-    enc_path_0 = path_0 + "visit_occurrence"
-    enc_path_1 = path_1 + "visit_occurrence"
-    
-    df_visit_0 = spark.read.parquet(enc_path_0)
-    df_visit_1 = spark.read.parquet(enc_path_1)
-    
-    #-- Exclude future encounters
-    start_date_0 = path_0.split('/')[len(path_0.split('/')) - 2]   #2020-11-02
-    start_date_1 = path_1.split('/')[len(path_1.split('/')) - 2]
-    
-    start_datetime_0 = datetime.datetime.strptime(start_date_0,'%Y-%m-%d')   #convert to datetime
-    start_datetime_1 = datetime.datetime.strptime(start_date_1,'%Y-%m-%d')
-    
-    df_visit_0 = df_visit_0.filter(df_visit_0.visit_start_datetime < start_datetime_0)
-    df_visit_1 = df_visit_1.filter(df_visit_1.visit_start_datetime < start_datetime_1)
-    #-----------------------------
-        
-    print("New Added Patients: copy " + str(i+1) + " -> copy " + str(i) )
-    report_new_add_patient(spark, df_person_0, df_person_1, i)
-    
-    print("ID Change Patients: copy " + str(i+1) + " -> copy " + str(i) )
-    report_id_change_patient(spark, df_person_0, df_person_1, i, 1)
-    
-    print("ID Reuse Patients: copy " + str(i+1) + " -> copy " + str(i) )
-    report_id_reuse_patient(spark, df_person_0, df_person_1, i)
-    
-    print("Deleted Patients: copy " + str(i+1) + " -> copy " + str(i) )
-    report_delete_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1, i)
-    
-    print("Merged Patients: copy " + str(i+1) + " -> copy " + str(i) )
-    report_merge_patient(spark, df_person_0, df_person_1, df_visit_0, df_visit_1, i)
 
+person_0_path = "/projects/cch/patient-merge/versioned_omop/2020-07-30/"
+df_person_base = spark.read.parquet(person_0_path + "person")
+cnt_uniq_person_base = df_person_base.select('person_id').distinct().count()
+
+columns = ['copy2copy', 'Num of Uniq Patient', 'AD', 'IC', 'IR', 'DL', 'DM']
+vals = [(person_0_path, cnt_uniq_person_base, 0, 0, 0, 0, 0)]
+
+df_matric = spark.createDataFrame(vals,columns)
+#df_matric.printSchema()
+    
+for i in range(len(lst_of_path)-1):
+    
+    base_path = "/projects/cch/patient-merge/mimic_omop_tables/experiment/output/"
+    
+    ad_path = base_path + "AD_cp" + str(i+1) + "_to_cp" + str(i) + ".csv"
+    ic_path = base_path + "IC_cp" + str(i+1) + "_to_cp" + str(i) + ".csv"
+    ir_path = base_path + "IR_cp" + str(i+1) + "_to_cp" + str(i) + ".csv"
+    dl_path = base_path + "DL_cp" + str(i+1) + "_to_cp" + str(i) + ".csv"
+    dm_path = base_path + "DM_cp" + str(i+1) + "_to_cp" + str(i) + ".csv"
+    
+    
+    #--read all result and count
+    df_ad = spark.read.csv(ad_path)
+    df_ad_count = df_ad.count()
+    if df_ad_count > 0:
+        df_ad_count = df_ad_count - 1
+    
+    df_ic = spark.read.csv(ic_path)
+    df_ic_count = df_ic.count()
+    if df_ic_count > 0:
+        df_ic_count = df_ic_count - 1
+    
+    df_ir = spark.read.csv(ir_path)
+    df_ir_count = df_ir.count()
+    if df_ir_count > 0:
+        df_ir_count = df_ir_count - 1
+    
+    df_dl = spark.read.csv(dl_path)
+    df_dl_count = df_dl.count()
+    if df_dl_count > 0:
+        df_dl_count = df_dl_count - 1
+    
+    df_dm = spark.read.csv(dm_path)
+    df_dm_count = df_dm.count()
+    if df_dm_count > 0:
+        df_dm_count = df_dm_count - 1
+    
+    copy2copy = lst_of_path[i+1]
+    df_person_item = spark.read.parquet(copy2copy + "person")
+    cnt_uniq_person_item = df_person_item.select('person_id').distinct().count()
+    
+    df_item = spark.createDataFrame([(copy2copy, cnt_uniq_person_item, df_ad_count, df_ic_count,\
+                                      df_ir_count, df_dl_count, df_dm_count)],columns )
+                                    
+    df_matric = df_matric.union(df_item)
+    
+    
+
+df_matric.show(30, truncate=False)
+                                     
 #-- Close spark session
 spark.stop()
